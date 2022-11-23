@@ -21,9 +21,10 @@
 //kbuild:lib-$(CONFIG_LOGGER) += syslogd_and_logger.o
 
 //usage:#define logger_trivial_usage
-//usage:       "[-s] [-t TAG] [-p PRIO] [MESSAGE]"
+//usage:       "[-i] [-s] [-t TAG] [-p PRIO] [MESSAGE]"
 //usage:#define logger_full_usage "\n\n"
 //usage:       "Write MESSAGE (or stdin) to syslog\n"
+//usage:     "\n	-i	Log PID of logger to system log"
 //usage:     "\n	-s	Log to stderr as well as the system log"
 //usage:     "\n	-t TAG	Log using the specified tag (defaults to user name)"
 //usage:     "\n	-p PRIO	Priority (number or FACILITY.LEVEL pair)"
@@ -105,10 +106,12 @@ int logger_main(int argc UNUSED_PARAM, char **argv)
 	str_t = uid2uname_utoa(geteuid());
 
 	/* Parse any options */
-	opt = getopt32(argv, "p:st:", &str_p, &str_t);
+	opt = getopt32(argv, "p:st:i", &str_p, &str_t);
 
 	if (opt & 0x2) /* -s */
 		i |= LOG_PERROR;
+	if (opt & 0x8) /* -i */
+		i |= LOG_PID;
 	//if (opt & 0x4) /* -t */
 	openlog(str_t, i, 0);
 	i = LOG_USER | LOG_NOTICE;
