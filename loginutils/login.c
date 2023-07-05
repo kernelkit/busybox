@@ -346,6 +346,11 @@ int login_main(int argc UNUSED_PARAM, char **argv)
 #if ENABLE_LOGIN_SESSION_AS_CHILD
 	pid_t child_pid;
 #endif
+#if ENABLE_FEATURE_SHADOWPASSWDS
+	/* Using _r function to avoid pulling in static buffers */
+	struct spwd spw, *result = NULL;
+	char buffer[256];
+#endif
 	IF_FEATURE_UTMP(pid_t my_pid;)
 
 	INIT_G();
@@ -492,6 +497,16 @@ int login_main(int argc UNUSED_PARAM, char **argv)
 			strcpy(username, "UNKNOWN");
 			goto fake_it;
 		}
+
+#if ENABLE_FEATURE_SHADOWPASSWDS
+		if (getspnam_r(pw->pw_name, &spw, buffer, sizeof(buffer), &result)
+		    || !result || strcmp(result->sp_namp, pw->pw_name)) {
+			strcpy(username, "UNKNOWN");
+			goto fake_it;
+		} else {
+			pw->pw_passwd = result->sp_pwdp;
+		}
+#endif
 
 		if (pw->pw_passwd[0] == '!' || pw->pw_passwd[0] == '*')
 			goto auth_failed;
